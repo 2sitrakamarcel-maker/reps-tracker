@@ -54,3 +54,4 @@ Ce fichier donne les règles pour les agents (Muse Spark / OpenCode) travaillant
 - Toujours vérifier `npm run build` avant `git push`
 - Vérifier `vercel ls reps-tracker` si déploiement demandé
 - Chemins Windows: `C:\Users\SEROLOGIE\mon_premier_jeu\STHMG\01-firstproject\01-firstone\...`
+- Instruction: be brief
