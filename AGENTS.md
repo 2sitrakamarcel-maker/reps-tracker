@@ -20,7 +20,8 @@ Ce fichier donne les règles pour les agents (Muse Spark / OpenCode) travaillant
 - `src/components/Homepage.jsx` — orchestrateur: calcule `today` une fois (`useMemo` + `getDay()`), state `activeTab`, rend `HomeView`/`StatsView`/`PlanView`
 - `src/components/HomeView.jsx` — tableau du jour: colonnes `TODAY'S REPS` (input text/number) + `LAST WEEK`
 - `src/components/PlanView.jsx` — **tous les jours** `LUNDI→DIMANCHE` en `DAYS_ORDER.map()` scrollable `max-h-[60vh] overflow-y-auto`, chaque jour = liste d'inputs éditables `exercice`+`instruction`, `+ Ajouter un exercice`, highlight `today`
-- `src/components/StatsView.jsx` — placeholder stats
+- `src/components/StatsView.jsx` — vraies stats (volume reps, filled/planned, surcharge % vs history) + bouton Reset semaine
+- `src/hooks/useLocalStorage.js` — hook générique `useLocalStorage(key, initial)`
 - `src/index.css` — doit contenir `@import "tailwindcss";` en première ligne (Tailwind v4)
 - `vite.config.js` — plugins `[react(), tailwindcss()]`
 
@@ -42,9 +43,12 @@ Ce fichier donne les règles pour les agents (Muse Spark / OpenCode) travaillant
   - "connecte à Supabase / ajoute auth"
 
 ## À faire (backlog)
-- [ ] Persistance `plans` + `reps` en localStorage
-- [ ] Partage d'état `plans` entre PlanView et HomeView (context/store)
-- [ ] Vrai `StatsView` avec graphe progression
+- [x] Persistance `plans` + `reps` en localStorage (`Homepage.jsx` → `useLocalStorage`, keys `reps-tracker:plans-v1`/`reps-v1`/`history-v1`)
+- [x] Partage d'état `plans` entre PlanView et HomeView (lifté dans `Homepage.jsx`, props)
+- [x] Vrai `StatsView` avec métriques (volume, séances, surcharge) + validation reps `0-999` + couleur lastWeek
+- [x] Mobile-first responsive (plein écran mobile, sticky navbar, `100dvh`, touch 44px)
+- [ ] Graphe progression historique (chart)
+- [ ] PWA / install prompt
 
 ## Notes agent
 - Toujours vérifier `npm run build` avant `git push`
