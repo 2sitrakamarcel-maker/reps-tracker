@@ -1,35 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 const DAYS_ORDER = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE']
 
-const initialPlans = {
-  LUNDI: [
-    { id: 1, exercise: '', instruction: '' },
-    { id: 2, exercise: '', instruction: '' },
-  ],
-  MARDI: [
-    { id: 1, exercise: '', instruction: '' },
-  ],
-  MERCREDI: [
-    { id: 1, exercise: '', instruction: '' },
-  ],
-  JEUDI: [
-    { id: 1, exercise: '', instruction: '' },
-  ],
-  VENDREDI: [
-    { id: 1, exercise: '', instruction: '' },
-  ],
-  SAMEDI: [
-    { id: 1, exercise: '', instruction: '' },
-  ],
-  DIMANCHE: [
-    { id: 1, exercise: '', instruction: '' },
-  ],
-}
-
-const PlanView = ({ today }) => {
-  const [plans, setPlans] = useState(initialPlans)
-
+const PlanView = ({ today, plans, setPlans }) => {
   const updateField = (day, id, field, value) => {
     setPlans((prev) => ({
       ...prev,
@@ -76,7 +49,7 @@ const PlanView = ({ today }) => {
             </div>
 
             <div className="space-y-3">
-              {plans[day].map((item) => (
+              {plans[day]?.map((item) => (
                 <div key={item.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-center">
                   <input
                     type="text"
