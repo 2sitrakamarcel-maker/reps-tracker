@@ -1,14 +1,27 @@
 import React from 'react'
 
-const HomeView = ({ selectedDay, plans, todayReps, setTodayReps }) => {
+const HomeView = ({ selectedDay, plans, todayReps, setTodayReps, history }) => {
   const dayPlans = plans[selectedDay] || []
 
   const getRep = (id) => String(todayReps?.[selectedDay]?.[id] ?? '')
   const setRep = (id, value) => {
+    // validation: 0-999, empty allowed
+    if (value !== '' && !/^\d{0,3}$/.test(value)) return
+    if (value !== '' && Number(value) > 999) return
     setTodayReps((prev) => ({
       ...prev,
       [selectedDay]: { ...(prev[selectedDay] || {}), [id]: value },
     }))
+  }
+
+  const getLastWeek = (id) => {
+    // last archived history entry for this day/id
+    const dates = Object.keys(history).sort().reverse()
+    for (const d of dates) {
+      const v = history[d]?.[selectedDay]?.[id]
+      if (v !== undefined && v !== '') return String(v)
+    }
+    return '-'
   }
 
   if (dayPlans.length === 0 || dayPlans.every((p) => !p.exercise.trim())) {
@@ -29,37 +42,52 @@ const HomeView = ({ selectedDay, plans, todayReps, setTodayReps }) => {
         </div>
         <div className="flex gap-4 sm:gap-12 text-[11px] sm:text-xs font-bold text-gray-400 tracking-wider shrink-0">
           <span>TODAY&apos;S REPS</span>
-          <span className="hidden sm:inline">LAST WEEK</span>
+          <span>LAST WEEK</span>
         </div>
       </div>
 
       <div className="space-y-2 sm:space-y-3">
         {dayPlans
           .filter((p) => p.exercise.trim())
-          .map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col gap-2 sm:gap-3 py-3 px-3 sm:px-4 bg-gray-50/50 rounded-xl border border-gray-100"
-            >
-              <div className="min-w-0">
-                <span className="font-bold text-gray-800 text-sm sm:text-base block truncate">{item.exercise}</span>
-                {item.instruction && <span className="text-xs text-gray-400 block truncate">{item.instruction}</span>}
+          .map((item) => {
+            const cur = getRep(item.id)
+            const last = getLastWeek(item.id)
+            const isProgress = cur !== '' && last !== '-' && Number(cur) > Number(last)
+            const isRegress = cur !== '' && last !== '-' && Number(cur) < Number(last)
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col gap-2 sm:gap-3 py-3 px-3 sm:px-4 bg-gray-50/50 rounded-xl border border-gray-100"
+              >
+                <div className="min-w-0">
+                  <span className="font-bold text-gray-800 text-sm sm:text-base block truncate">{item.exercise}</span>
+                  {item.instruction && <span className="text-xs text-gray-400 block truncate">{item.instruction}</span>}
+                </div>
+                <div className="flex items-center justify-between gap-2 sm:gap-8">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="-"
+                    value={cur}
+                    onChange={(e) => setRep(item.id, e.target.value)}
+                    className="flex-1 sm:flex-none sm:w-20 text-center py-2.5 bg-white border border-gray-300 rounded-lg font-bold text-gray-800 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#9747FF] min-h-[44px]"
+                  />
+                  <span
+                    className={`w-20 sm:w-24 text-center text-xs sm:text-sm font-bold py-2 sm:py-1.5 px-2 sm:px-3 rounded-lg shrink-0 ${
+                      isProgress
+                        ? 'bg-green-100 text-green-700'
+                        : isRegress
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-purple-100/60 text-purple-600'
+                    }`}
+                  >
+                    {last}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between gap-2 sm:gap-8">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="-"
-                  value={getRep(item.id)}
-                  onChange={(e) => setRep(item.id, e.target.value)}
-                  className="flex-1 sm:flex-none sm:w-20 text-center py-2.5 bg-white border border-gray-300 rounded-lg font-bold text-gray-800 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#9747FF] min-h-[44px]"
-                />
-                <span className="w-20 sm:w-24 text-center text-xs sm:text-sm font-semibold text-purple-600 bg-purple-100/60 py-2 sm:py-1.5 px-2 sm:px-3 rounded-lg shrink-0">
-                  -
-                </span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
       </div>
     </div>
   )

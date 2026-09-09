@@ -1,11 +1,13 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import Navbar from './navbar'
 import HomeView from './HomeView'
 import StatsView from './StatsView'
 import PlanView from './PlanView'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 const STORAGE_PLANS = 'reps-tracker:plans-v1'
 const STORAGE_REPS = 'reps-tracker:reps-v1'
+const STORAGE_HISTORY = 'reps-tracker:history-v1'
 
 const getTodayName = () => {
   const daysMap = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -25,33 +27,21 @@ const initialPlans = {
   DIMANCHE: [{ id: 1, exercise: '', instruction: '' }],
 }
 
-const load = (key, fallback) => {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch {
-    return fallback
-  }
-}
-
 const Homepage = () => {
   const [activeTab, setActiveTab] = useState('Home')
   const today = useMemo(() => getTodayName(), [])
 
-  const [plans, setPlans] = useState(() => load(STORAGE_PLANS, initialPlans))
-  const [todayReps, setTodayReps] = useState(() => load(STORAGE_REPS, {}))
+  const [plans, setPlans] = useLocalStorage(STORAGE_PLANS, initialPlans)
+  const [todayReps, setTodayReps] = useLocalStorage(STORAGE_REPS, {})
+  const [history, setHistory] = useLocalStorage(STORAGE_HISTORY, {})
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_PLANS, JSON.stringify(plans))
-    } catch {}
-  }, [plans])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_REPS, JSON.stringify(todayReps))
-    } catch {}
-  }, [todayReps])
+  const resetWeek = () => {
+    if (!confirm('Reset tous les TODAY\'S REPS de la semaine ?')) return
+    // archive current reps as lastWeek before reset
+    const now = new Date().toISOString().slice(0, 10)
+    setHistory((prev) => ({ ...prev, [now]: todayReps }))
+    setTodayReps({})
+  }
 
   return (
     <div className="min-h-[100dvh] bg-gradient-to-br from-purple-50 via-white to-purple-100 p-0 sm:p-4 md:p-8 flex flex-col items-center">
@@ -62,9 +52,9 @@ const Homepage = () => {
 
         <main className="flex-1 p-3 sm:p-6 flex flex-col overflow-auto">
           {activeTab === 'Home' && (
-            <HomeView selectedDay={today} plans={plans} todayReps={todayReps} setTodayReps={setTodayReps} />
+            <HomeView selectedDay={today} plans={plans} todayReps={todayReps} setTodayReps={setTodayReps} history={history} />
           )}
-          {activeTab === 'Stats' && <StatsView selectedDay={today} />}
+          {activeTab === 'Stats' && <StatsView plans={plans} todayReps={todayReps} history={history} selectedDay={today} onReset={resetWeek} />}
           {activeTab === 'Plan' && <PlanView today={today} plans={plans} setPlans={setPlans} />}
         </main>
       </div>
