@@ -1,29 +1,18 @@
 import React from 'react'
 
-const Navbar = ({ activeTab, onSelectTab, selectedDay, onSelectDay }) => {
+const Navbar = ({ activeTab, onSelectTab, selectedDay }) => {
   const tabs = ['Home', 'Stats', 'Plan']
-  const days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE']
 
   return (
     <nav className="w-full py-4 px-6 flex items-center justify-between flex-wrap gap-4">
-      {/* Day Selector Pill */}
-      <div className="bg-white/20 backdrop-blur-md rounded-full px-5 py-2 flex items-center space-x-2 text-white font-bold text-sm shadow-sm">
-        <span className="opacity-80">DAY :</span>
-        <select
-          value={selectedDay}
-          onChange={(e) => onSelectDay(e.target.value)}
-          className="bg-transparent text-white font-bold outline-none cursor-pointer"
-        >
-          {days.map((day) => (
-            <option key={day} value={day} className="text-gray-900 bg-white">
-              {day}
-            </option>
-          ))}
-        </select>
+      {/* Day Badge - read only, auto day */}
+      <div className="bg-white text-[#9747FF] rounded-full px-5 py-2 flex items-center gap-2 font-black text-sm shadow-md">
+        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        DAY : {selectedDay}
       </div>
 
       {/* Nav Tabs */}
-      <div className="bg-[#9747FF] rounded-full py-2 px-4 flex items-center space-x-2 shadow-lg shadow-purple-500/25">
+      <div className="bg-[#9747FF] rounded-full py-2 px-4 flex items-center gap-2 shadow-lg shadow-purple-500/25">
         {tabs.map((tab) => {
           const isActive = activeTab === tab
           return (

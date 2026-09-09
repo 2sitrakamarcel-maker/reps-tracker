@@ -1,54 +1,123 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-const PlanView = ({ selectedDay }) => {
-  const plans = {
-    LUNDI: [
-      { id: 1, title: 'lundi - Upper Body A', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' },
-      { id: 2, title: 'lundi - Isolation', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ],
-    MARDI: [
-      { id: 1, title: 'mardi - Pull Session', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ],
-    MERCREDI: [
-      { id: 1, title: 'mercredi - Jambes', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ],
-    JEUDI: [
-      { id: 1, title: 'jeudi - Épaules / Bras', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ],
-    VENDREDI: [
-      { id: 1, title: 'vendredi - Upper Body B', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ],
-    SAMEDI: [
-      { id: 1, title: 'samedi - Cardio', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ],
-    DIMANCHE: [
-      { id: 1, title: 'dimanche - Repos', exercise: '{-input(exercice)}', inst: '{-input(instructions)}' }
-    ]
+const DAYS_ORDER = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE']
+
+const initialPlans = {
+  LUNDI: [
+    { id: 1, exercise: '', instruction: '' },
+    { id: 2, exercise: '', instruction: '' },
+  ],
+  MARDI: [
+    { id: 1, exercise: '', instruction: '' },
+  ],
+  MERCREDI: [
+    { id: 1, exercise: '', instruction: '' },
+  ],
+  JEUDI: [
+    { id: 1, exercise: '', instruction: '' },
+  ],
+  VENDREDI: [
+    { id: 1, exercise: '', instruction: '' },
+  ],
+  SAMEDI: [
+    { id: 1, exercise: '', instruction: '' },
+  ],
+  DIMANCHE: [
+    { id: 1, exercise: '', instruction: '' },
+  ],
+}
+
+const PlanView = ({ today }) => {
+  const [plans, setPlans] = useState(initialPlans)
+
+  const updateField = (day, id, field, value) => {
+    setPlans((prev) => ({
+      ...prev,
+      [day]: prev[day].map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    }))
   }
 
-  const dayPlans = plans[selectedDay] || plans.LUNDI
+  const addExercise = (day) => {
+    setPlans((prev) => ({
+      ...prev,
+      [day]: [...prev[day], { id: Date.now(), exercise: '', instruction: '' }],
+    }))
+  }
+
+  const removeExercise = (day, id) => {
+    setPlans((prev) => ({
+      ...prev,
+      [day]: prev[day].filter((item) => item.id !== id),
+    }))
+  }
 
   return (
-    <div className="w-full max-w-4xl mx-auto my-4 space-y-4">
-      {dayPlans.map((plan) => (
-        <div key={plan.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-            <div className="flex items-center space-x-2">
-              <span className="text-red-500 text-xl">★</span>
-              <h3 className="font-bold text-gray-800 lowercase text-sm">{plan.title}</h3>
+    <div className="w-full max-w-4xl mx-auto my-2 max-h-[60vh] overflow-y-auto pr-2 space-y-6 scrollbar-thin">
+      {DAYS_ORDER.map((day) => {
+        const isToday = day === today
+        return (
+          <div
+            key={day}
+            className={`rounded-2xl border-2 p-5 space-y-4 transition-all ${
+              isToday ? 'border-[#9747FF] bg-purple-50/40 shadow-md' : 'border-gray-200 bg-white shadow-sm'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`text-xl ${isToday ? 'text-[#9747FF]' : 'text-gray-300'}`}>★</span>
+                <h3 className="font-black text-gray-800 lowercase tracking-wide">{day}</h3>
+                {isToday && (
+                  <span className="ml-2 bg-[#9747FF] text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider">
+                    Aujourd&apos;hui
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-semibold text-gray-400">instructions</span>
             </div>
-            <span className="text-xs font-semibold text-gray-400">instructions</span>
+
+            <div className="space-y-3">
+              {plans[day].map((item) => (
+                <div key={item.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-center">
+                  <input
+                    type="text"
+                    placeholder="exercice"
+                    value={item.exercise}
+                    onChange={(e) => updateField(day, item.id, 'exercise', e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9747FF] focus:border-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="instructions"
+                    value={item.instruction}
+                    onChange={(e) => updateField(day, item.id, 'instruction', e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9747FF] focus:border-transparent"
+                  />
+                  <button
+                    onClick={() => removeExercise(day, item.id)}
+                    className="hidden md:block text-gray-400 hover:text-red-500 text-sm px-2"
+                    title="Supprimer"
+                  >
+                    ✕
+                  </button>
+                  <button
+                    onClick={() => removeExercise(day, item.id)}
+                    className="md:hidden text-xs text-red-400 font-semibold"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => addExercise(day)}
+              className="w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-bold text-gray-500 hover:border-[#9747FF] hover:text-[#9747FF] hover:bg-purple-50/50 transition-colors"
+            >
+              + Ajouter un exercice
+            </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-500 font-mono text-sm">
-              {plan.exercise}
-            </div>
-            <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-500 font-mono text-sm">
-              {plan.inst}
-            </div>
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
