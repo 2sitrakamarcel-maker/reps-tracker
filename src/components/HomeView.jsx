@@ -1,78 +1,93 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-const HomeView = ({ selectedDay }) => {
-  const [exercises, setExercises] = useState({
-    LUNDI: [
-      { id: 1, name: 'Développé couché', reps: '10', lastWeek: '8 reps' },
-      { id: 2, name: 'Incliné haltères', reps: '12', lastWeek: '10 reps' },
-      { id: 3, name: 'Écartés poulie', reps: '15', lastWeek: '15 reps' },
-      { id: 4, name: 'Dips', reps: '8', lastWeek: '8 reps' },
-    ],
-    MARDI: [
-      { id: 1, name: 'Tractions pronation', reps: '8', lastWeek: '7 reps' },
-      { id: 2, name: 'Rowing barre', reps: '10', lastWeek: '10 reps' },
-      { id: 3, name: 'Tirage vertical', reps: '12', lastWeek: '12 reps' },
-    ],
-    MERCREDI: [
-      { id: 1, name: 'Squat barre', reps: '8', lastWeek: '8 reps' },
-      { id: 2, name: 'Presse à cuisses', reps: '12', lastWeek: '10 reps' },
-      { id: 3, name: 'Leg extension', reps: '15', lastWeek: '15 reps' },
-    ],
-    JEUDI: [
-      { id: 1, name: 'Développé militaire', reps: '10', lastWeek: '9 reps' },
-      { id: 2, name: 'Élévations latérales', reps: '15', lastWeek: '15 reps' },
-    ],
-    VENDREDI: [
-      { id: 1, name: 'Curl biceps barre', reps: '10', lastWeek: '10 reps' },
-      { id: 2, name: 'Extension triceps poulie', reps: '12', lastWeek: '12 reps' },
-    ],
-    SAMEDI: [
-      { id: 1, name: 'Cardio / HIIT', reps: '30 min', lastWeek: '25 min' },
-    ],
-    DIMANCHE: [
-      { id: 1, name: 'Repos total', reps: '-', lastWeek: '-' },
-    ]
-  })
+const HomeView = ({ selectedDay, plans, todayReps, setTodayReps, history }) => {
+  const dayPlans = plans[selectedDay] || []
 
-  const dayExercises = exercises[selectedDay] || []
-
-  const handleRepChange = (id, newReps) => {
-    setExercises(prev => ({
+  const getRep = (id) => String(todayReps?.[selectedDay]?.[id] ?? '')
+  const setRep = (id, value) => {
+    // validation: 0-999, empty allowed
+    if (value !== '' && !/^\d{0,3}$/.test(value)) return
+    if (value !== '' && Number(value) > 999) return
+    setTodayReps((prev) => ({
       ...prev,
-      [selectedDay]: prev[selectedDay].map(ex => ex.id === id ? { ...ex, reps: newReps } : ex)
+      [selectedDay]: { ...(prev[selectedDay] || {}), [id]: value },
     }))
   }
 
+  const getLastWeek = (id) => {
+    // last archived history entry for this day/id
+    const dates = Object.keys(history).sort().reverse()
+    for (const d of dates) {
+      const v = history[d]?.[selectedDay]?.[id]
+      if (v !== undefined && v !== '') return String(v)
+    }
+    return '-'
+  }
+
+  if (dayPlans.length === 0 || dayPlans.every((p) => !p.exercise.trim())) {
+    return (
+      <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-200 p-6 sm:p-8 w-full max-w-4xl mx-auto my-2 sm:my-4 text-center">
+        <p className="font-bold text-gray-500 text-sm sm:text-base">Aucun exercice planifié pour {selectedDay.toLowerCase()}.</p>
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">Va dans Plan pour ajouter tes exos — ils apparaîtront ici.</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 w-full max-w-4xl mx-auto my-4">
-      <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-        <div className="flex items-center space-x-2">
-          <span className="text-yellow-500 text-xl">★</span>
-          <h2 className="text-xl font-bold text-gray-800 lowercase">{selectedDay}</h2>
+    <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-6 w-full max-w-4xl mx-auto my-1 sm:my-4">
+      <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <span className="text-[#9747FF] text-base sm:text-xl shrink-0">★</span>
+          <h2 className="text-base sm:text-xl font-black text-gray-800 lowercase truncate">{selectedDay}</h2>
         </div>
-        <div className="flex space-x-12 text-xs font-bold text-gray-400 tracking-wider">
-          <span>TODAY'S REPS</span>
+        <div className="flex gap-4 sm:gap-12 text-[11px] sm:text-xs font-bold text-gray-400 tracking-wider shrink-0">
+          <span>TODAY&apos;S REPS</span>
           <span>LAST WEEK</span>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {dayExercises.map((ex) => (
-          <div key={ex.id} className="flex items-center justify-between py-3 px-4 bg-gray-50/50 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
-            <span className="font-semibold text-gray-700">{ex.name}</span>
-            <div className="flex items-center space-x-16">
-              <input
-                type="text"
-                value={ex.reps}
-                onChange={(e) => handleRepChange(ex.id, e.target.value)}
-                className="w-20 text-center py-2 bg-white border border-gray-300 rounded-lg font-bold text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#9747FF]"
-              />
-              <span className="w-28 text-center text-sm font-semibold text-purple-600 bg-purple-100/60 py-1.5 px-3 rounded-lg">
-                {ex.lastWeek}
-              </span>
-            </div>
-          </div>
-        ))}
+      <div className="space-y-2 sm:space-y-3">
+        {dayPlans
+          .filter((p) => p.exercise.trim())
+          .map((item) => {
+            const cur = getRep(item.id)
+            const last = getLastWeek(item.id)
+            const isProgress = cur !== '' && last !== '-' && Number(cur) > Number(last)
+            const isRegress = cur !== '' && last !== '-' && Number(cur) < Number(last)
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col gap-2 sm:gap-3 py-3 px-3 sm:px-4 bg-gray-50/50 rounded-xl border border-gray-100"
+              >
+                <div className="min-w-0">
+                  <span className="font-bold text-gray-800 text-sm sm:text-base block truncate">{item.exercise}</span>
+                  {item.instruction && <span className="text-xs text-gray-400 block truncate">{item.instruction}</span>}
+                </div>
+                <div className="flex items-center justify-between gap-2 sm:gap-8">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="-"
+                    value={cur}
+                    onChange={(e) => setRep(item.id, e.target.value)}
+                    className="flex-1 sm:flex-none sm:w-20 text-center py-2.5 bg-white border border-gray-300 rounded-lg font-bold text-gray-800 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#9747FF] min-h-[44px]"
+                  />
+                  <span
+                    className={`w-20 sm:w-24 text-center text-xs sm:text-sm font-bold py-2 sm:py-1.5 px-2 sm:px-3 rounded-lg shrink-0 ${
+                      isProgress
+                        ? 'bg-green-100 text-green-700'
+                        : isRegress
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-purple-100/60 text-purple-600'
+                    }`}
+                  >
+                    {last}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
       </div>
     </div>
   )
