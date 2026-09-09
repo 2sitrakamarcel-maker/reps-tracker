@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Navbar from './navbar'
 import HomeView from './HomeView'
 import StatsView from './StatsView'
 import PlanView from './PlanView'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { supabase, isSupabaseConfigured, getDeviceId } from '../lib/supabase'
 
 const STORAGE_PLANS = 'reps-tracker:plans-v1'
 const STORAGE_REPS = 'reps-tracker:reps-v1'
@@ -35,12 +36,64 @@ const Homepage = () => {
   const [todayReps, setTodayReps] = useLocalStorage(STORAGE_REPS, {})
   const [history, setHistory] = useLocalStorage(STORAGE_HISTORY, {})
 
+  // Supabase sync without auth - device_id
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    const deviceId = getDeviceId()
+    // load from supabase on mount
+    supabase
+      .from('reps_data')
+      .select('data')
+      .eq('device_id', deviceId)
+      .single()
+      .then(({ data }) => {
+        if (data?.data) {
+          if (data.data.plans) setPlans(data.data.plans)
+          if (data.data.todayReps) setTodayReps(data.data.todayReps)
+          if (data.data.history) setHistory(data.data.history)
+        }
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    const deviceId = getDeviceId()
+    const timeout = setTimeout(() => {
+      supabase.from('reps_data').upsert({ device_id: deviceId, data: { plans, todayReps, history }, updated_at: new Date().toISOString() }).then(() => {})
+    }, 800)
+    return () => clearTimeout(timeout)
+  }, [plans, todayReps, history])
+
   const resetWeek = () => {
     if (!confirm('Reset tous les TODAY\'S REPS de la semaine ?')) return
-    // archive current reps as lastWeek before reset
     const now = new Date().toISOString().slice(0, 10)
     setHistory((prev) => ({ ...prev, [now]: todayReps }))
     setTodayReps({})
+  }
+
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify({ plans, todayReps, history }, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reps-tracker-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const importJson = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result)
+        if (parsed.plans) setPlans(parsed.plans)
+        if (parsed.todayReps) setTodayReps(parsed.todayReps)
+        if (parsed.history) setHistory(parsed.history)
+      } catch {}
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -54,7 +107,9 @@ const Homepage = () => {
           {activeTab === 'Home' && (
             <HomeView selectedDay={today} plans={plans} todayReps={todayReps} setTodayReps={setTodayReps} history={history} />
           )}
-          {activeTab === 'Stats' && <StatsView plans={plans} todayReps={todayReps} history={history} selectedDay={today} onReset={resetWeek} />}
+          {activeTab === 'Stats' && (
+            <StatsView plans={plans} todayReps={todayReps} history={history} selectedDay={today} onReset={resetWeek} onExport={exportJson} onImport={importJson} isSupabase={isSupabaseConfigured} />
+          )}
           {activeTab === 'Plan' && <PlanView today={today} plans={plans} setPlans={setPlans} />}
         </main>
       </div>
@@ -63,6 +118,7 @@ const Homepage = () => {
         <h2 className="text-sm sm:text-2xl font-black text-gray-800 tracking-wider uppercase">
           &quot;OBJECTIF : SURCHARGE PROGRESSIVE&quot;
         </h2>
+        {!isSupabaseConfigured && <p className="text-[11px] text-gray-400 mt-1">Local only — ajoute VITE_SUPABASE_URL pour sync</p>}
       </footer>
     </div>
   )

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { DAYS_ORDER, calcDayStats, calcGlobalStats } from '../utils/stats'
 
-const StatsView = ({ plans, todayReps, history, selectedDay, onReset }) => {
+const StatsView = ({ plans, todayReps, history, selectedDay, onReset, onExport, onImport, isSupabase }) => {
   const global = useMemo(() => calcGlobalStats(plans, todayReps, history), [plans, todayReps, history])
 
   const dayStatsMap = useMemo(() => {
@@ -124,6 +124,23 @@ const StatsView = ({ plans, todayReps, history, selectedDay, onReset }) => {
       </div>
 
       <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={onExport}
+            className="py-3 rounded-xl bg-white border border-gray-200 font-bold text-sm hover:bg-gray-50 min-h-[44px]"
+          >
+            Export JSON
+          </button>
+          <label className="py-3 rounded-xl bg-white border border-gray-200 font-bold text-sm hover:bg-gray-50 min-h-[44px] flex items-center justify-center cursor-pointer">
+            Import JSON
+            <input type="file" accept=".json" onChange={onImport} className="hidden" />
+          </label>
+        </div>
+        {isSupabase ? (
+          <p className="text-[11px] text-green-600 text-center">✓ Sync Supabase (device_id sans auth)</p>
+        ) : (
+          <p className="text-[11px] text-gray-400 text-center">Local only — crée .env avec VITE_SUPABASE_URL pour sync</p>
+        )}
         <button
           onClick={onReset}
           className="w-full py-3 rounded-xl bg-white border-2 border-red-200 text-red-600 font-bold text-sm hover:bg-red-50 active:scale-[0.99] transition-all min-h-[44px]"
