@@ -1,27 +1,17 @@
 import React from 'react'
+import { getLastFor, getPct } from '../utils/stats'
 
 const HomeView = ({ selectedDay, plans, todayReps, setTodayReps, history }) => {
   const dayPlans = plans[selectedDay] || []
 
   const getRep = (id) => String(todayReps?.[selectedDay]?.[id] ?? '')
   const setRep = (id, value) => {
-    // validation: 0-999, empty allowed
     if (value !== '' && !/^\d{0,3}$/.test(value)) return
     if (value !== '' && Number(value) > 999) return
     setTodayReps((prev) => ({
       ...prev,
       [selectedDay]: { ...(prev[selectedDay] || {}), [id]: value },
     }))
-  }
-
-  const getLastWeek = (id) => {
-    // last archived history entry for this day/id
-    const dates = Object.keys(history).sort().reverse()
-    for (const d of dates) {
-      const v = history[d]?.[selectedDay]?.[id]
-      if (v !== undefined && v !== '') return String(v)
-    }
-    return '-'
   }
 
   if (dayPlans.length === 0 || dayPlans.every((p) => !p.exercise.trim())) {
@@ -51,9 +41,10 @@ const HomeView = ({ selectedDay, plans, todayReps, setTodayReps, history }) => {
           .filter((p) => p.exercise.trim())
           .map((item) => {
             const cur = getRep(item.id)
-            const last = getLastWeek(item.id)
-            const isProgress = cur !== '' && last !== '-' && Number(cur) > Number(last)
-            const isRegress = cur !== '' && last !== '-' && Number(cur) < Number(last)
+            const last = getLastFor(selectedDay, item.id, history)
+            const pct = cur !== '' && last !== '-' ? getPct(cur, last) : null
+            const isProgress = pct !== null && pct > 0
+            const isRegress = pct !== null && pct < 0
             return (
               <div
                 key={item.id}
@@ -75,14 +66,10 @@ const HomeView = ({ selectedDay, plans, todayReps, setTodayReps, history }) => {
                   />
                   <span
                     className={`w-20 sm:w-24 text-center text-xs sm:text-sm font-bold py-2 sm:py-1.5 px-2 sm:px-3 rounded-lg shrink-0 ${
-                      isProgress
-                        ? 'bg-green-100 text-green-700'
-                        : isRegress
-                          ? 'bg-red-100 text-red-600'
-                          : 'bg-purple-100/60 text-purple-600'
+                      isProgress ? 'bg-green-100 text-green-700' : isRegress ? 'bg-red-100 text-red-600' : 'bg-purple-100/60 text-purple-600'
                     }`}
                   >
-                    {last}
+                    {last} {pct !== null ? `(${pct > 0 ? '+' : ''}${pct.toFixed(0)}%)` : ''}
                   </span>
                 </div>
               </div>
